@@ -1,2 +1,9 @@
-# PartitionedReductionGPU
-CUDA implementation of the partitioned reduction algorithm that finds the maximum value in a large array (containing more items than the number of threads in a block).
+# Partitioned Reduction on GPU
+CUDA implementation of the partitioned reduction algorithm that finds the maximum value in a large array (containing more elements than the number of threads in a block). 
+
+The application expects an integer argument which is the required size of the array to work with. If it is not provided, it asks the user to type a value from the console. After that, an array with the required size is generated & filled with random float data. This part is written in C++.
+
+The *cuda_functions.cu* file contains two functions:
+
+- The first is the `partitioned_reduction` CUDA function. It receives the generated float array with its size. It first calculates the required number of blocks: `ceil(dataSize / BLOCK_SIZE) + 1`. `BLOCK_SIZE` is a constant which can be set at the top of the file (default value is 32). After that, the number of required merge iterations is calculated, which is the ceil of the `BLOCK_SIZE`-based logarithm of the required number of blocks + 1. This is because the result decreases logarithmically in each iteration, so the single maximum result is obtained in `BLOCK_SIZE`-based logarithm iterations. After the calculations, the memory allocation takes place, the array is copied from host to device. Then, the kernel function is called `numMergeIterations` times (to produce the single maximum value). Finally, the result is copied back to the host, then the allocated resource is freed.
+- The `partitioned_reduce_kernel` function gets the input array which is already on the device. This function has a loop, which does one comparison per iteration, then saves the maximum for further comparisons, then halves the remaining threads for the next iterations. Then the threads are synchronized. This is repeated until the block processed all items assigned to it. In the end, the first thread in a block knows the single maximum found, which is saved into the array indexed with the block index.
